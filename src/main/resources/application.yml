@@ -1,6 +1,10 @@
 spring:
   application:
     name: accommodation-marketplace
+  config:
+    import:optional:file:.env[.properties]
+
+
   datasource:
     url: ${DATASOURCE_URL:jdbc:mysql://localhost:3306/employee2_db}
     user: ${MYSQL_USER:root}
