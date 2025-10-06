@@ -2,7 +2,7 @@ spring:
   application:
     name: accommodation-marketplace
   config:
-    import:optional:file:.env[.properties]
+    import: optional:file:.env[.properties]
 
 
   datasource:
