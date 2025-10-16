@@ -1,14 +1,14 @@
 package com.dcl.accommodate.security.jwt;
 
 import com.dcl.accommodate.config.AppEnv;
+import com.dcl.accommodate.enums.JwtType;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Duration;
 import java.util.Base64;
@@ -21,31 +21,49 @@ import java.util.Map;
 @Service
 public class JwtService {
 
-
     private final Key key;
+    private final AppEnv env;
 
-    public JwtService(AppEnv env){
+    public JwtService(AppEnv env) {
+        this.env = env;
         this.key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(env.getJwt().getSecret()));
     }
 
-    public String generateToken(Map<String,Object> claims, String subject, Duration ttl){
-        var systemMillis = System.currentTimeMillis();
-        return Jwts.builder()
-                .setClaims(claims)
-                .setIssuedAt(new Date(systemMillis))
-                .setExpiration(new Date(systemMillis + ttl.toMillis()))
-                .setSubject(subject)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact(); //
+    public record TokenConfig(
+            Map<String, Object> claims,
+            String subject,
+            JwtType jwtType
+    ) {
     }
 
-
-    private Claims getClaims(String token){
+    public Jws<Claims> getClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
-                .build()//return a parser to parse JWT
-                .parseClaimsJws(token)
-                .getBody();
+                .build()
+                .parseClaimsJws(token);
     }
 
+    public record TokenResult(
+            String token,
+            Duration ttl
+    ) {
+    }
+
+    public TokenResult generateToken(TokenConfig config) {
+        var systemMillis = System.currentTimeMillis();
+        Duration ttl = config.jwtType.equals(JwtType.ACCESS)
+                ? env.getJwt().getAccessTtl()
+                : env.getJwt().getRefreshTtl();
+
+        String token = Jwts.builder()
+                .setHeaderParam("type", config.jwtType.name())
+                .setClaims(config.claims)
+                .setIssuedAt(new Date(systemMillis))
+                .setExpiration(new Date(systemMillis + ttl.toMillis()))
+                .setSubject(config.subject)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+
+        return new TokenResult(token, ttl);
+    }
 }

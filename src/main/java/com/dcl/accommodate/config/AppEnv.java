@@ -5,6 +5,8 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+
 @Getter
 @Setter
 @Component
@@ -12,10 +14,13 @@ import org.springframework.stereotype.Component;
 public class AppEnv {
 
     private Jwt jwt;
+    private String baseUri;
 
     @Getter
     @Setter
-    public static class Jwt{
+    public static class Jwt {
         private String secret;
+        private Duration accessTtl;
+        private Duration refreshTtl;
     }
 }
