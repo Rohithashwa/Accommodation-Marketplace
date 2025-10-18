@@ -143,6 +143,18 @@ public class UserServiceImpl implements UserService {
         User user = repository.findById(userId).get();
 
         var data = hostRepository.findById(userId).orElseThrow(userNotFound);
+        Host host = updateHost(request, userId, data);
+
+
+        var save = hostRepository.save(host);
+
+        var info = getHostProfile(user, host);
+
+        return info;
+
+    }
+
+    private static Host updateHost(HostRequest request, UUID userId, Host data) {
         Host host = Host.builder()
                 .bio(request.bio())
                 .userId(userId)
@@ -150,10 +162,10 @@ public class UserServiceImpl implements UserService {
                 .isSuperHost(data.isSuperHost())
                 .responseRate(data.getResponseRate())
                 .build();
+        return host;
+    }
 
-
-        var save = hostRepository.save(host);
-
+    private static Profile.HostProfile getHostProfile(User user, Host host) {
         HostInfo hostInfo = HostInfo.builder()
                 .role(user.getUserRole())
                 .bio(host.getBio())
@@ -175,9 +187,7 @@ public class UserServiceImpl implements UserService {
                 .lastModifiedDate(user.getLastModifiedDate())
                 .profile(List.of(hostInfo))
                 .build();
-
         return info;
-
     }
 
     private static void updateUser(User user, UserUpdateRequest request) {
